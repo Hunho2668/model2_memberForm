@@ -9,12 +9,12 @@
 	<script src="http://code.jquery.com/jquery-latest.js"></script>
 	
 	<!-- 외부 자바스크립트 파일 불러오기 -->
-	<script src="<%=request.getContextPath() %>/member/login.js"></script>
+	<script src="<%=request.getContextPath() %>/login.js"></script>
 	
 	</head>
 	<body>
 	
-	<form method="post" action="<%=request.getContextPath() %>/Login.do">
+	<form method="get" action="<%=request.getContextPath() %>/Login.do">
 	<table border=1 width=350 align=center>
 		<caption>로그인</caption>
 		<tr>

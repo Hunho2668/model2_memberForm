@@ -81,49 +81,6 @@ public class MemberDAO {
 		return result;
 	}
 
-	// ID중복검사
-	public int memberAuth(String id) {
-		int result = 0;
-		Connection con = null;
-		PreparedStatement pstmt = null;
-		ResultSet rs = null;
-
-		try {
-			con = getConnection();
-
-			String sql = "select * from member where id=?";
-			// 프리페어드 객체
-			pstmt = con.prepareStatement(sql);
-			pstmt.setString(1, id);
-			rs = pstmt.executeQuery(); // selectSQL문 실행
-
-			if (rs.next()) { // 조건식을 만족하는 데이터 1개를 구해온다
-				result = 1; // 중복아이디
-
-			} else {
-				result = -1; // 사용가능한 ID
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (rs != null)
-					rs.close();
-				if (pstmt != null)
-					pstmt.close();
-				if (con != null)
-					con.close();
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		return result;
-
-	}
-
 	// 로그인 (회원인증 처리 )
 	public int memberCheck(MemberDTO member) {
 		int result = 0;
@@ -135,7 +92,7 @@ public class MemberDAO {
 		try {
 			con = getConnection();
 
-			String sql = "select * from member where id=?";
+			String sql = "select * from model2member where id=?";
 			// 프리페어드 객체
 			pstmt = con.prepareStatement(sql);
 			pstmt.setString(1, member.getId());
@@ -173,7 +130,8 @@ public class MemberDAO {
 
 	public MemberDTO getMember(String id) {
 		MemberDTO member = new MemberDTO();
-
+		// 로그 추가
+		System.out.println("getMember 메서드 호출됨, ID=" + id);
 		Connection con = null;
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
@@ -182,7 +140,7 @@ public class MemberDAO {
 			con = getConnection();
 
 			// 수정: SQL 구문 오류 수정 ("id?=" 대신 "id=?")
-			String sql = "select * from member where id=?";
+			String sql = "select * from model2member where id=?";
 
 			pstmt = con.prepareStatement(sql);
 			pstmt.setString(1, id);
@@ -229,7 +187,7 @@ public class MemberDAO {
 	}
 
 	// 회원정보수정
-	public int update(MemberDTO member) {
+	public int memberupdate(MemberDTO member) {
 
 		Connection con = null;
 		PreparedStatement pstmt = null;
@@ -241,7 +199,7 @@ public class MemberDAO {
 			con = getConnection();
 
 			// SQL 쿼리 수정: 'WHERE'절 구문 오류 수정
-			String sql = "UPDATE member SET name=?, jumin1=?, jumin2=?, mailid=?, domain=?, tel1=?,";
+			String sql = "UPDATE model2member SET name=?, jumin1=?, jumin2=?, mailid=?, domain=?, tel1=?,";
 			sql += "tel2=?, tel3=?, phone1=?, phone2=?, phone3=?, post=?, address=?,";
 			sql += "gender=?, hobby=?, intro=? WHERE id=?"; // 쉼표 대신 공백 사용
 
@@ -285,7 +243,7 @@ public class MemberDAO {
 		return result;
 	}
 
-	// 회원탈퇴
+	// 회원 탈퇴
 	public int delete(String id) {
 		int result = 0;
 		Connection con = null;
@@ -294,27 +252,103 @@ public class MemberDAO {
 		try {
 			con = getConnection();
 
-			String sql = "delete from member where id=?";
-
+			String sql = "DELETE FROM model2member WHERE id=?";
 			pstmt = con.prepareStatement(sql);
-
 			pstmt.setString(1, id);
 			result = pstmt.executeUpdate(); // delete SQL문 실행
 
 		} catch (Exception e) {
-
+			e.printStackTrace();
 		} finally {
 			try {
 				if (pstmt != null)
 					pstmt.close();
 				if (con != null)
 					con.close();
-
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 
+		return result;
+	}
+
+	// ID중복검사(ajax)
+	public int idcheck(String id) {
+		int result = 0;
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		try {
+			con = getConnection();
+
+			String sql = "select * from model2member where id=?";
+			pstmt = con.prepareStatement(sql); // PreparedStatement 초기화
+			pstmt.setString(1, id);
+			rs = pstmt.executeQuery(); // select SQL문 실행
+			if (rs.next()) {
+				result = 1; // 중복 ID
+			} else {
+				result = -1; // 사용 가능한 ID
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (pstmt != null)
+					pstmt.close();
+				if (con != null)
+					con.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+
+	// 로그인 (회원인증)
+	public int memberAuth(String id, String passwd) {
+		int result = 0;
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+
+		try {
+			con = getConnection();
+
+			// 1. 먼저 ID만 확인하는 쿼리
+			String sql = "select passwd from model2member where id=?";
+			pstmt = con.prepareStatement(sql); // PreparedStatement 초기화
+			pstmt.setString(1, id);
+			rs = pstmt.executeQuery(); // select SQL문 실행
+
+			if (rs.next()) {
+				// ID가 존재할 때, 비밀번호 확인
+				String dbPasswd = rs.getString("passwd");
+				if (dbPasswd.equals(passwd)) {
+					result = 1; // ID와 비밀번호가 일치함
+				} else {
+					result = 0; // ID는 맞지만 비밀번호가 틀림
+				}
+			} else {
+				result = -1; // ID가 존재하지 않음
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null)
+					rs.close();
+				if (pstmt != null)
+					pstmt.close();
+				if (con != null)
+					con.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		return result;
 	}
 
